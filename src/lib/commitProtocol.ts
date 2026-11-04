@@ -4,7 +4,7 @@ import { env } from '../config/env';
 
 export interface CanonicalPick {
   eventId: string;
-  category: 'NBA' | 'NFL';
+  category: string;
   side: string;
   probability: number; // e.g. 0.6500
   salt: string;        // 32-byte hex string

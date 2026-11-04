@@ -62,7 +62,7 @@ function sendHtml(res: http.ServerResponse, html: string) {
 // In-memory cache for live ESPN fixtures
 let cachedFixtures: any[] = [];
 let lastFixturesFetchTime = 0;
-const FIXTURES_CACHE_TTL_MS = 60 * 1000; // 1 minute
+const FIXTURES_CACHE_TTL_MS = 90 * 1000; // 1.5 minutes
 
 function parseAmericanOddsToProb(oddsStr: string | number | undefined): number | null {
   if (!oddsStr) return null;
@@ -87,18 +87,26 @@ async function getCachedLiveFixtures(): Promise<any[]> {
 
   const todayYmd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const tomorrowYmd = new Date(Date.now() + 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  const day3Ymd = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+  const dateStrings = [todayYmd, tomorrowYmd, day3Ymd];
+
   const sports = [
-    { cat: 'EPL', emoji: '⚽', path: 'soccer/eng.1', name: 'Premier League' },
-    { cat: 'NBA', emoji: '🏀', path: 'basketball/nba', name: 'NBA' },
-    { cat: 'NFL', emoji: '🏈', path: 'football/nfl', name: 'NFL' },
+    { cat: 'UCL', emoji: '⭐', path: 'soccer/uefa.champions', name: 'Champions League', sport: 'Soccer' },
+    { cat: 'UEL', emoji: '🏆', path: 'soccer/uefa.europa', name: 'Europa League', sport: 'Soccer' },
+    { cat: 'EPL', emoji: '⚽', path: 'soccer/eng.1', name: 'Premier League', sport: 'Soccer' },
+    { cat: 'LALIGA', emoji: '🇪🇸', path: 'soccer/esp.1', name: 'La Liga', sport: 'Soccer' },
+    { cat: 'SERIEA', emoji: '🇮🇹', path: 'soccer/ita.1', name: 'Serie A', sport: 'Soccer' },
+    { cat: 'BUNDESLIGA', emoji: '🇩🇪', path: 'soccer/ger.1', name: 'Bundesliga', sport: 'Soccer' },
+    { cat: 'NBA', emoji: '🏀', path: 'basketball/nba', name: 'NBA', sport: 'Basketball' },
+    { cat: 'NFL', emoji: '🏈', path: 'football/nfl', name: 'NFL', sport: 'Football' },
+    { cat: 'NHL', emoji: '🏒', path: 'hockey/nhl', name: 'NHL', sport: 'Hockey' },
   ];
 
   const fetchPromises = sports.map(async s => {
     const list: any[] = [];
     const urls = [
-      `https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard?dates=${todayYmd}`,
-      `https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard?dates=${tomorrowYmd}`,
-      `https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard`
+      `https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard`,
+      ...dateStrings.map(d => `https://site.api.espn.com/apis/site/v2/sports/${s.path}/scoreboard?dates=${d}`)
     ];
 
     for (const u of urls) {
@@ -137,12 +145,21 @@ async function getCachedLiveFixtures(): Promise<any[]> {
             }
           }
 
+          const d = new Date(commenceTs);
+          const nowD = new Date(now);
+          const isToday = d.toDateString() === nowD.toDateString();
+          const tomorrowD = new Date(now + 86400000);
+          const isTomorrow = d.toDateString() === tomorrowD.toDateString();
+          const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          const timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
           const existingIdx = list.findIndex(x => x.id === `${s.cat.toLowerCase()}_${ev.id}`);
           const item = {
             id: `${s.cat.toLowerCase()}_${ev.id}`,
             title: `${awayTeam} vs ${homeTeam}`,
             league: s.name,
             category: s.cat,
+            sport: s.sport,
             emoji: s.emoji,
             homeTeam,
             awayTeam,
@@ -151,6 +168,11 @@ async function getCachedLiveFixtures(): Promise<any[]> {
             minsUntil: mins,
             isClosed,
             status,
+            dayLabel,
+            timeLabel,
+            dateFormatted: `${dayLabel} · ${timeLabel}`,
+            isToday,
+            isTomorrow,
             sides: [
               { name: awayTeam, market: awayPct },
               { name: homeTeam, market: homePct },
@@ -2137,11 +2159,34 @@ function renderPickContent(): string {
     
     <div class="row">
       <div class="card">
-        <label for="matchupSelect" style="font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px;">
-          LIVE MATCHUPS & BETTING MARKETS (ESPN)
-        </label>
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 6px; letter-spacing: 0.03em;">
+            SPORTS & LEAGUES
+          </label>
+          <div id="leagueFilters" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+            <button type="button" class="pill filter-pill" data-league="ALL" onclick="setLeagueFilter('ALL')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer; background: var(--ink); color: #fff; border-color: var(--ink);">All Sports</button>
+            <button type="button" class="pill filter-pill" data-league="UCL" onclick="setLeagueFilter('UCL')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">⭐ Champions League</button>
+            <button type="button" class="pill filter-pill" data-league="UEL" onclick="setLeagueFilter('UEL')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">🏆 Europa League</button>
+            <button type="button" class="pill filter-pill" data-league="SOCCER" onclick="setLeagueFilter('SOCCER')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">⚽ Premier League / La Liga</button>
+            <button type="button" class="pill filter-pill" data-league="NBA" onclick="setLeagueFilter('NBA')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">🏀 NBA</button>
+            <button type="button" class="pill filter-pill" data-league="NFL" onclick="setLeagueFilter('NFL')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">🏈 NFL</button>
+            <button type="button" class="pill filter-pill" data-league="NHL" onclick="setLeagueFilter('NHL')" style="font-size: 12px; padding: 5px 12px; min-height: 30px; cursor: pointer;">🏒 NHL</button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+            <label for="matchupSelect" style="font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.03em;">
+              MATCHUP (<span id="matchupCountBadge" style="color: var(--accent); font-weight: 600;">fetching games...</span>)
+            </label>
+            <div id="dayFilters" style="display: flex; gap: 4px;">
+              <button type="button" class="pill day-pill" data-day="ALL" onclick="setDayFilter('ALL')" style="font-size: 11px; padding: 3px 9px; min-height: 26px; cursor: pointer; background: var(--accent); color: #fff; border-color: var(--accent);">All Days</button>
+              <button type="button" class="pill day-pill" data-day="TODAY" onclick="setDayFilter('TODAY')" style="font-size: 11px; padding: 3px 9px; min-height: 26px; cursor: pointer;">📅 Today</button>
+              <button type="button" class="pill day-pill" data-day="TOMORROW" onclick="setDayFilter('TOMORROW')" style="font-size: 11px; padding: 3px 9px; min-height: 26px; cursor: pointer;">📅 Tomorrow</button>
+            </div>
+          </div>
+        </div>
+
         <select id="matchupSelect" onchange="onSelectMatchup(this.value)" style="width: 100%; padding: 12px; font: inherit; font-size: 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); margin-bottom: 16px; background: var(--bg); color: var(--ink);">
-          <option value="">Fetching today's live games from ESPN...</option>
+          <option value="">Fetching live sports schedule from ESPN...</option>
         </select>
 
         <h2 id="matchupTitle" style="margin-top: 0;">Select a match</h2>
@@ -2346,6 +2391,41 @@ function getPickScript(): string {
     };
     const refreshUserPicks = window.refreshUserPicks;
 
+    let currentLeagueFilter = 'ALL';
+    let currentDayFilter = 'ALL';
+
+    window.setLeagueFilter = function(league) {
+      currentLeagueFilter = league;
+      document.querySelectorAll('.filter-pill').forEach(function(b) {
+        if (b.getAttribute('data-league') === league) {
+          b.style.background = 'var(--ink)';
+          b.style.color = '#fff';
+          b.style.borderColor = 'var(--ink)';
+        } else {
+          b.style.background = 'var(--bg)';
+          b.style.color = 'var(--ink)';
+          b.style.borderColor = 'var(--line-strong)';
+        }
+      });
+      renderMatchupsDropdown();
+    };
+
+    window.setDayFilter = function(day) {
+      currentDayFilter = day;
+      document.querySelectorAll('.day-pill').forEach(function(b) {
+        if (b.getAttribute('data-day') === day) {
+          b.style.background = 'var(--accent)';
+          b.style.color = '#fff';
+          b.style.borderColor = 'var(--accent)';
+        } else {
+          b.style.background = 'var(--bg)';
+          b.style.color = 'var(--muted)';
+          b.style.borderColor = 'var(--line-strong)';
+        }
+      });
+      renderMatchupsDropdown();
+    };
+
     async function loadLiveFixtures() {
       const select = document.getElementById('matchupSelect');
       try {
@@ -2361,11 +2441,12 @@ function getPickScript(): string {
         console.warn('Live fixtures fetch note:', err);
       }
 
-      // Offline fallback
+      // Offline fallback including UEFA Champions League
       MATCHUPS = [
-        { id: 'epl_mun_che', title: 'Manchester United vs Chelsea', league: 'Premier League', category: 'EPL', emoji: '⚽', minsUntil: 65, isClosed: false, sides: [{ name: 'Man United', market: 46 }, { name: 'Chelsea', market: 54 }] },
-        { id: 'nba_lal_gsw', title: 'Lakers vs Warriors', league: 'NBA', category: 'NBA', emoji: '🏀', minsUntil: 110, isClosed: false, sides: [{ name: 'Lakers', market: 62 }, { name: 'Warriors', market: 38 }] },
-        { id: 'nfl_bal_buf', title: 'Baltimore Ravens vs Buffalo Bills', league: 'NFL', category: 'NFL', emoji: '🏈', minsUntil: 240, isClosed: false, sides: [{ name: 'Ravens', market: 48 }, { name: 'Bills', market: 52 }] },
+        { id: 'ucl_rma_aek', title: 'Real Madrid vs AEK Athens', league: 'Champions League', category: 'UCL', sport: 'Soccer', emoji: '⭐', minsUntil: 270, isClosed: false, dayLabel: 'Today', isToday: true, sides: [{ name: 'Real Madrid', market: 78 }, { name: 'AEK Athens', market: 22 }] },
+        { id: 'ucl_liv_fen', title: 'Liverpool vs Fenerbahce', league: 'Champions League', category: 'UCL', sport: 'Soccer', emoji: '⭐', minsUntil: 270, isClosed: false, dayLabel: 'Today', isToday: true, sides: [{ name: 'Liverpool', market: 72 }, { name: 'Fenerbahce', market: 28 }] },
+        { id: 'nba_phi_det', title: 'Philadelphia 76ers vs Detroit Pistons', league: 'NBA', category: 'NBA', sport: 'Basketball', emoji: '🏀', minsUntil: 340, isClosed: false, dayLabel: 'Tonight', isToday: true, sides: [{ name: '76ers', market: 65 }, { name: 'Pistons', market: 35 }] },
+        { id: 'nfl_bal_buf', title: 'Baltimore Ravens vs Buffalo Bills', league: 'NFL', category: 'NFL', sport: 'Football', emoji: '🏈', minsUntil: 1200, isClosed: false, dayLabel: 'Tomorrow', isTomorrow: true, sides: [{ name: 'Ravens', market: 48 }, { name: 'Bills', market: 52 }] },
       ];
       renderMatchupsDropdown();
       refreshUserPicks();
@@ -2373,29 +2454,72 @@ function getPickScript(): string {
 
     function renderMatchupsDropdown() {
       const select = document.getElementById('matchupSelect');
-      select.innerHTML = MATCHUPS.map(function(m) {
-        const locked = userPicksCache.find(function(p) {
-          return p.eventId === m.id || p.rawEventId === m.id || (p.eventId && p.eventId.includes(m.id));
-        });
-        let timeStr = locked
-          ? '🔒 Locked (' + locked.pick + ')'
-          : m.isClosed
-          ? '🔴 Closed (' + m.status + ')'
-          : m.minsUntil > 60
-          ? '⏳ In ' + Math.floor(m.minsUntil / 60) + 'h ' + (m.minsUntil % 60) + 'm'
-          : '⚡ In ' + m.minsUntil + 'm';
-        return '<option value=\"' + m.id + '\">' + (m.emoji || '🏆') + ' ' + m.category + ' · ' + m.title + ' (' + timeStr + ')</option>';
-      }).join('');
+      const badge = document.getElementById('matchupCountBadge');
+      if (!select) return;
 
-      if (!currentMatchup) {
-        const first = MATCHUPS.find(function(m) { return !m.isClosed; }) || MATCHUPS[0];
-        if (first) {
-          select.value = first.id;
-          onSelectMatchup(first.id);
+      const filtered = MATCHUPS.filter(function(m) {
+        // League filter
+        if (currentLeagueFilter !== 'ALL') {
+          if (currentLeagueFilter === 'SOCCER') {
+            if (m.sport !== 'Soccer' && !['EPL', 'LALIGA', 'SERIEA', 'BUNDESLIGA', 'UCL', 'UEL'].includes(m.category)) return false;
+          } else if (m.category !== currentLeagueFilter) {
+            return false;
+          }
         }
+        // Day filter
+        if (currentDayFilter === 'TODAY' && !m.isToday) return false;
+        if (currentDayFilter === 'TOMORROW' && !m.isTomorrow) return false;
+        return true;
+      });
+
+      if (badge) {
+        badge.innerText = filtered.length + ' games';
+      }
+
+      if (filtered.length === 0) {
+        select.innerHTML = '<option value=\"\">No games match the selected filter</option>';
+        return;
+      }
+
+      // Group by league & day
+      const groups = {};
+      filtered.forEach(function(m) {
+        const key = (m.emoji || '🏆') + ' ' + (m.league || m.category) + (m.dayLabel ? ' (' + m.dayLabel + ')' : '');
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(m);
+      });
+
+      let html = '';
+      Object.keys(groups).forEach(function(groupName) {
+        html += '<optgroup label=\"' + groupName + '\">';
+        groups[groupName].forEach(function(m) {
+          const locked = userPicksCache.find(function(p) {
+            return p.eventId === m.id || p.rawEventId === m.id || (p.eventId && p.eventId.includes(m.id));
+          });
+          let timeStr = locked
+            ? '🔒 Locked (' + locked.pick + ')'
+            : m.isClosed
+            ? '🔴 Closed (' + m.status + ')'
+            : m.minsUntil > 60
+            ? (m.dayLabel || 'Upcoming') + ' ' + (m.timeLabel || '') + ' · In ' + Math.floor(m.minsUntil / 60) + 'h ' + (m.minsUntil % 60) + 'm'
+            : '⚡ In ' + m.minsUntil + 'm';
+          html += '<option value=\"' + m.id + '\">' + m.title + ' [' + timeStr + ']</option>';
+        });
+        html += '</optgroup>';
+      });
+
+      select.innerHTML = html;
+
+      const stillSelected = filtered.find(function(m) { return currentMatchup && m.id === currentMatchup.id; });
+      if (stillSelected) {
+        select.value = stillSelected.id;
+        onSelectMatchup(stillSelected.id);
       } else {
-        select.value = currentMatchup.id;
-        onSelectMatchup(currentMatchup.id);
+        const firstOpen = filtered.find(function(m) { return !m.isClosed; }) || filtered[0];
+        if (firstOpen) {
+          select.value = firstOpen.id;
+          onSelectMatchup(firstOpen.id);
+        }
       }
     }
 
@@ -2449,7 +2573,8 @@ function getPickScript(): string {
           let minsStr = currentMatchup.minsUntil > 60
             ? Math.floor(currentMatchup.minsUntil / 60) + ' hours ' + (currentMatchup.minsUntil % 60) + ' minutes'
             : currentMatchup.minsUntil + ' minutes';
-          timer.innerHTML = '<span style=\"color:#16a34a;font-weight:600;\">⚡ Kickoff in ' + minsStr + '</span> • Pre-game lock open on ESPN schedule';
+          const dayPrefix = currentMatchup.dayLabel ? currentMatchup.dayLabel + (currentMatchup.timeLabel ? ' (' + currentMatchup.timeLabel + ')' : '') : 'Upcoming';
+          timer.innerHTML = '<span style=\"color:#16a34a;font-weight:600;\">⚡ ' + dayPrefix + ' · Kickoff in ' + minsStr + '</span> • ' + (currentMatchup.league || currentMatchup.category) + ' on ESPN';
           btnLock.disabled = false;
           btnLock.innerText = 'Lock pick on the blockchain';
           btnLock.style.background = '';
