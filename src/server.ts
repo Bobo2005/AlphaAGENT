@@ -2070,13 +2070,15 @@ function renderPageLayout(currentPath: string, pageTitle: string, contentHtml: s
     }
 
     // Restore wallet session on page load
-    (function() {
+    function restoreSession() {
       const g = localStorage.getItem('alpha_connected_wallet');
       if (g) {
         const isExt = localStorage.getItem('alpha_is_extension') === 'true';
         setConnectedSession(g, isExt, isExt ? 'Connected' : '0.05 SUI');
       }
-    })();
+    }
+    restoreSession();
+    window.addEventListener('DOMContentLoaded', restoreSession);
 
     ${pageScript}
   </script>
@@ -2800,12 +2802,14 @@ function getPickScript(): string {
             }
 
             // Clean message string without gas/financial words to avoid Blowfish phishing heuristics
-            const msgToSign = 'AlphaAgent Prediction Commitment\n' +
-              'Forecaster: ' + userAddr + '\n' +
-              'Matchup: ' + currentMatchup.title + '\n' +
-              'Selection: ' + sideObj.name + ' (' + chanceVal + '%)\n' +
-              'Market Line: ' + (sideObj.market || 50) + '%\n' +
-              'Timestamp: ' + Math.floor(Date.now() / 1000);
+            const msgToSign = [
+              'AlphaAgent Prediction Commitment',
+              'Forecaster: ' + userAddr,
+              'Matchup: ' + currentMatchup.title,
+              'Selection: ' + sideObj.name + ' (' + chanceVal + '%)',
+              'Market Line: ' + (sideObj.market || 50) + '%',
+              'Timestamp: ' + Math.floor(Date.now() / 1000)
+            ].join('\\n');
             const msgBytes = new TextEncoder().encode(msgToSign);
 
             let signSuccess = false;
@@ -2998,7 +3002,10 @@ function getPickScript(): string {
       }
     }
 
-    // Load live fixtures on page load
+    // Load live fixtures and restore wallet session on page load
+    if (typeof restoreSession === 'function') {
+      restoreSession();
+    }
     loadLiveFixtures();
 
     // Refresh countdown timers every 15 seconds
