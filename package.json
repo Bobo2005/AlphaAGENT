@@ -1,0 +1,58 @@
+{
+  "name": "alpha-agent",
+  "version": "1.0.0",
+  "description": "AlphaAgent: Autonomous due-diligence and risk-auditing agent for Sui and Walrus",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "tsx src/server.ts",
+    "test:env": "tsx src/config/env.ts",
+    "test:tatum": "tsx tests/tatumClient.test.ts",
+    "test:walrus": "tsx tests/walrusClient.test.ts",
+    "test:odds": "tsx tests/oddsEngine.test.ts",
+    "test:resolution": "tsx tests/resolutionEngine.test.ts",
+    "test:judge": "tsx tests/judgeMode.test.ts",
+    "test:commit": "tsx tests/commitProtocol.test.ts",
+    "test:reveal": "tsx tests/revealService.test.ts",
+    "test:logger": "tsx tests/episodeLogger.test.ts",
+    "test:scoring": "tsx tests/scoringEngine.test.ts",
+    "test:decision": "tsx tests/decisionEngine.test.ts",
+    "test:kelly": "tsx tests/kellyCalculator.test.ts",
+    "test:wipe-rebuild": "tsx scripts/wipe-and-rebuild.ts",
+    "test:lesson": "tsx tests/lessonEngine.test.ts",
+    "test:audit": "tsx tests/auditService.test.ts",
+    "test:x402": "tsx tests/x402Service.test.ts",
+    "test:x402-buyer": "tsx scripts/buyer-agent.ts",
+    "simulate:luck": "tsx tests/luckSimulator.test.ts",
+    "prove": "tsx scripts/prove.ts",
+    "bot:copy": "tsx scripts/run-copy-bot.ts",
+    "deploy:contract": "tsx scripts/deploy-contract.ts"
+  },
+  "keywords": [
+    "sui",
+    "walrus-memory",
+    "tatum",
+    "ai-agent",
+    "x402"
+  ],
+  "author": "AlphaAgent Team",
+  "license": "MIT",
+  "dependencies": {
+    "@mysten-incubation/memwal": "^0.1.11",
+    "@mysten/sui": "^2.38.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "dotenv": "^16.4.5",
+    "lru-cache": "^11.5.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.5.2"
+  }
+}

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: alpha-agent
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npx tsx src/server.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUI_NETWORK
+        value: testnet
+      - key: TATUM_SUI_RPC_URL
+        value: https://api.tatum.io/v3/blockchain/node/sui-testnet
+      - key: WALRUS_RELAYER_ENDPOINT
+        value: https://relayer.memory.walrus.xyz
+

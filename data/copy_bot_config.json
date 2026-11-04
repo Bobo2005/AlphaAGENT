@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "bankrollSui": 25,
+  "kellyMultiplier": 0.25,
+  "maxBetPct": 0.025,
+  "minEdge": 0.02,
+  "minBetAmountSui": 0.05,
+  "monitoredForecasters": [],
+  "autoPayInvoice": true
+}

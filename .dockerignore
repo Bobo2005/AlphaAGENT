@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.local
+alphaagent-ui/node_modules
+alphaagent-ui/.next
+dist
+

@@ -1,0 +1,11 @@
+:root{
+  --ink:#111827; --muted:#4b5563; --line:#e5e7eb; --line-strong:#9ca3af;
+  --bg:#ffffff; --panel:#f3f4f6;
+  --accent:#1d4ed8; --accent-ink:#ffffff;
+  --follow-bg:#e3effc; --follow-ink:#0b4f9c;
+  --watch-bg:#fdf0d5;  --watch-ink:#7a4a00;
+  --skip-bg:#fbe4e4;   --skip-ink:#8a1c1c;
+  --radius:10px; --radius-sm:8px;
+  --font:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --max:1040px; --tap:44px;
+}

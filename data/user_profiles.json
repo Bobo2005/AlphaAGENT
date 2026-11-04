@@ -1,0 +1,47 @@
+{
+  "0xde0c09b20b38f42c983f7b5b954dc61bb8a31535ad280d5e9a81c8c52faecd12": {
+    "address": "0xde0c09b20b38f42c983f7b5b954dc61bb8a31535ad280d5e9a81c8c52faecd12",
+    "displayName": "bobo",
+    "bio": "Verified on-chain tipster and quantitative sports bettor. Stamped on Sui and Walrus.",
+    "avatar": "🎯",
+    "socialTwitter": "@bobotrades0",
+    "preferredSports": [
+      "EPL",
+      "NBA",
+      "NFL"
+    ],
+    "riskTolerance": "conservative",
+    "defaultStakeSui": 2.6,
+    "joinedAt": 1793450000
+  },
+  "0xc27638e3acdbf0f89840a433ec80a5c85095aa4d7c102e2b0425a4d0f615d702": {
+    "address": "0xc27638e3acdbf0f89840a433ec80a5c85095aa4d7c102e2b0425a4d0f615d702",
+    "displayName": "Forecaster_c276…d702",
+    "bio": "AlphaAgent sports bettor & verified on-chain forecaster. Predictions stamped on Sui & Walrus.",
+    "avatar": "⚡",
+    "socialTwitter": "",
+    "preferredSports": [
+      "EPL",
+      "NBA",
+      "NFL"
+    ],
+    "riskTolerance": "balanced",
+    "defaultStakeSui": 2,
+    "joinedAt": 1793556269088
+  },
+  "0x99f3432ec192d3f96fe1a64b7c33b7d5368fb2c416af178716e896d4924c58cc": {
+    "address": "0x99f3432ec192d3f96fe1a64b7c33b7d5368fb2c416af178716e896d4924c58cc",
+    "displayName": "Forecaster_99f3…58cc",
+    "bio": "AlphaAgent sports bettor & verified on-chain forecaster. Predictions stamped on Sui & Walrus.",
+    "avatar": "⚡",
+    "socialTwitter": "",
+    "preferredSports": [
+      "EPL",
+      "NBA",
+      "NFL"
+    ],
+    "riskTolerance": "balanced",
+    "defaultStakeSui": 2,
+    "joinedAt": 1793583730962
+  }
+}
